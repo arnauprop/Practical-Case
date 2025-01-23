@@ -10,6 +10,11 @@ orders as (
 
 ),
 
+ orders_2 as (
+
+    select customer_id, amount from {{ ref('fct_orders') }}
+),
+
 customer_orders as (
 
     select
@@ -40,6 +45,22 @@ final as (
 
     left join customer_orders using (customer_id)
 
+), 
+
+final_2 as (
+    select 
+        f.customer_id,
+        f.first_name,
+        f.last_name, 
+        f.first_order_date,
+        f.most_recent_order_date,
+        f.number_of_orders,
+        o.amount
+    
+    from final f 
+    join orders_2 o using(customer_id)
 )
 
-select * from final
+select *, sum(amount) over(order by customer_id rows between unbounded preceding and current row) as lifetime_value
+from final_2
+order by lifetime_value
